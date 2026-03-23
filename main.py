@@ -2,7 +2,7 @@
 Wildlife Camera System - Raspberry Pi
 ======================================
 Hardware connections:
-  - GPIO 2 (raspberry pi 5V pin) -> VCC pin of motion sensor
+  - 5V pin on raspberry pi -> VCC pin of PIR Motion sensor
   - GPIO 23 (raspberry pi) -> output PIR Motion Sensor 
   - GND (raspberry pi) -> GND pin of motion sensor
   - CSI connector camera -> NoIR Camera Module - used during day/night.
@@ -18,7 +18,6 @@ Logic:
 
 import cv2
 import time
-import os
 import json
 import logging
 import numpy as np
@@ -174,7 +173,8 @@ def read_frame(camera, mode: str) -> np.ndarray:
 def load_classifier():
     """
     Load MobileNetV2 (ImageNet) as an OpenCV DNN.
-    Downloads model files automatically on first run.
+    Requires model files to already exist in the model/folder 
+    Run download_model.py first 
     """
     proto = MODEL_DIR / "mobilenet_v2_deploy.prototxt"
     weights = MODEL_DIR / "mobilenet_v2.caffemodel"
@@ -303,7 +303,10 @@ import requests
 
 def stream_frame(frame, timestamp):
     """Send one frame to website."""
-    _, buffer = cv2.imencode(".jpg", frame)
+    ok, buffer = cv2.imencode(".jpg", frame)
+    if not ok: 
+        log.warning("Failed to encode frame for streaming")
+        return
 
     try:
         requests.post(
@@ -312,8 +315,9 @@ def stream_frame(frame, timestamp):
             data={"timestamp": timestamp},
             timeout=1
         )
-    except Exception:
-        pass  # ignore errors for now
+    except Exception as e:
+        log.warning(f"Failed to stream frame: {e}")
+
 
 def run():
     OUTPUT_DIR.mkdir(exist_ok=True)
@@ -349,8 +353,13 @@ def run():
             start_time = time.time()
 
             while (time.time() - start_time) < RECORD_SECONDS:
-                frame = read_frame(camera, mode)
+                try:
+                     frame = read_frame(camera, mode)
 
+                except Exception as e:
+                    log.error(f"Frame capture error: {e}")
+                    break
+               
                 # classify
                 detections = classify_frame(net, frame)
 
@@ -380,4 +389,10 @@ def run():
         cleanup_gpio()
     
     log.info("System stopped.")
+
+if __name__ == "__main__": 
+    run() 
+
+
+
 
