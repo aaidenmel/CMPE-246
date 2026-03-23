@@ -119,7 +119,7 @@ def read_motion() -> bool:
 
 #  Camera helpers
 
-def open_camera(source: str = "rtsp://192.168.0.100:8889/cam"):
+def open_camera(source: str = "rtsp://localhost:8889/cam"):
     """
     Open an RTSP stream from MediaMTX instead of direct camera hardware.
     """
