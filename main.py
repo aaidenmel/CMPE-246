@@ -119,29 +119,19 @@ def read_motion() -> bool:
 
 #  Camera helpers
 
-def open_camera(index: int) -> cv2.VideoCapture:
-    """ open raspberry pi camera module 3 NoIR."""
-    """ Uses Picamera2 if available, otherwise falls back to OpenCV's Vidcapture"""
+def open_camera(source: str = "rtsp://192.168.0.100:8889/cam"):
+    """
+    Open an RTSP stream from MediaMTX instead of direct camera hardware.
+    """
+    log.info(f"Opening RTSP stream: {source}")
 
-    if HAS_PICAMERA2: 
-        picam2 = Picamera2()
-        config = picam2.create_video_configuration(
-            main = {"size": (FRAME_WIDTH, FRAME_HEIGHT), "format": "RGB888"}
+    cap = cv2.VideoCapture(source, cv2.CAP_FFMPEG)
+    cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
 
-        )
-        picam2.configure(config)
-        picam2.start()
-        time.sleep(1.0)
-        log.info("Pi Camera Module opened with Picamera2")
-        return picam2, "picamera2"
-    
-    cap = cv2.VideoCapture(index)
     if not cap.isOpened():
-        raise RuntimeError(f"Cannot open camera index {index}")
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH,  FRAME_WIDTH)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, FRAME_HEIGHT)
-    cap.set(cv2.CAP_PROP_FPS, FRAME_RATE)
-    return cap, "opencv"
+        raise RuntimeError(f"Cannot connect to RTSP stream at {source}")
+
+    return cap, "rtsp"
 
 def close_camera(camera, mode: str): 
     """Close camera function"""
