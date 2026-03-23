@@ -335,7 +335,7 @@ def run():
             log.info("Motion detected! Starting 30s recording...")
 
             try:
-                camera, mode = open_camera(0)
+                camera, mode = open_camera("rtsp://192.168.0.100:8554/cam")
             except RuntimeError as e:
                 log.error(f"Camera error: {e}")
                 continue
