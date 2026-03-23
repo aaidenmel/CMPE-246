@@ -360,9 +360,9 @@ def run():
                 stream_frame(annotated, timestamp)
 
                 # show preview (optional)
-                cv2.imshow("Wildlife Camera", annotated)
-                if cv2.waitKey(1) & 0xFF == ord("q"):
-                    break
+                #cv2.imshow("Wildlife Camera", annotated)
+                #if cv2.waitKey(1) & 0xFF == ord("q"):
+                #    break
 
             close_camera(camera, mode)
 
