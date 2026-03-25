@@ -5,12 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pi Cam Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
             --bg-color: #0f172a;
             --card-bg: #1e293b;
             --accent-color: #38bdf8;
             --text-main: #f8fafc;
+            --text-dim: #94a3b8;
         }
 
         body {
@@ -69,6 +71,34 @@
             height: 100%;
             display: block;
         }
+
+        /* Footer / Social Links Styling */
+        .footer-links {
+            margin-top: 2rem;
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+        }
+
+        .footer-links a {
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            color: var(--accent-color);
+            transform: translateY(-3px);
+        }
+
+        .footer-links span {
+            display: block;
+            font-size: 0.75rem;
+            margin-top: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
     </style>
 </head>
 <body>
@@ -79,6 +109,17 @@
 
         <div class="video-wrapper">
             <video id="video" controls autoplay muted playsinline></video>
+        </div>
+
+        <div class="footer-links">
+            <a href="https://github.com/aaidenmel/CMPE-246" target="_blank" title="GitHub Repository">
+                <i class="fab fa-github"></i>
+                <span>GitHub</span>
+            </a>
+            <a href="https://www.instagram.com/ecolens246/" target="_blank" title="Instagram">
+                <i class="fab fa-instagram"></i>
+                <span>Instagram</span>
+            </a>
         </div>
     </div>
 
