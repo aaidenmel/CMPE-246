@@ -61,27 +61,57 @@ LOG_FILE         = "wildlife_log.json"
 CONFIDENCE_MIN   = 0.25     # minimum confidence to display label
 
 ANIMAL_CLASSES   = {        # ImageNet class indices for common wildlife
-    281: "tabby cat",       271: "white wolf",      270: "timber wolf",
-    275: "fox",             276: "Arctic fox",      277: "grey fox",
-    278: "red fox",         279: "kit fox",         280: "grey fox",
-    282: "tiger cat",       283: "Persian cat",     284: "Siamese cat",
-    285: "Egyptian cat",    286: "cougar",          287: "lynx",
-    288: "leopard",         289: "snow leopard",    290: "jaguar",
-    291: "lion",            292: "tiger",           293: "cheetah",
-    294: "brown bear",      295: "American black bear", 296: "ice bear",
-    297: "sloth bear",      330: "wood rabbit",     331: "hare",
-    332: "Angora rabbit",   333: "hamster",         334: "porcupine",
-    335: "fox squirrel",    336: "marmot",          337: "beaver",
-    338: "guinea pig",      339: "sorrel",          340: "zebra",
-    341: "hog",             342: "wild boar",       343: "warthog",
-    344: "hippopotamus",    345: "ox",              346: "water buffalo",
-    347: "bison",           348: "ram",             349: "bighorn",
-    350: "ibex",            351: "hartebeest",      352: "impala",
-    353: "gazelle",         354: "Arabian camel",   355: "llama",
-    356: "weasel",          357: "mink",            358: "polecat",
-    359: "black-footed ferret", 360: "otter",       361: "skunk",
-    362: "badger",          363: "armadillo",       364: "three-toed sloth",
-    365: "orangutan",       366: "gorilla",         367: "chimpanzee",
+    269: "timber wolf",
+    270: "white wolf",
+    271: "red wolf",
+    272: "coyote",
+
+    277: "red fox",
+    278: "kit fox",
+    279: "arctic fox",
+    280: "grey fox",
+
+    281: "tabby",
+    282: "tiger cat",
+    283: "Persian cat",
+    284: "Siamese cat",
+    285: "Egyptian cat",
+
+    286: "cougar",
+    287: "lynx",
+    290: "jaguar",
+    291: "lion",
+    292: "tiger",
+
+    294: "brown bear",
+    295: "black bear",
+    296: "polar bear",
+    297: "sloth bear",
+
+    330: "wood rabbit",
+    331: "hare",
+    332: "Angora rabbit",
+    333: "hamster",
+    334: "porcupine",
+    335: "fox squirrel",
+    336: "marmot",
+    337: "beaver",
+    338: "guinea pig",
+
+    339: "horse",
+    340: "zebra",
+    347: "bison",
+    348: "ram",
+    352: "deer",
+    353: "deer",
+
+    356: "weasel",
+    357: "mink",
+    358: "polecat",
+    359: "black-footed ferret",
+    360: "otter",
+    361: "skunk",
+    362: "badger",
 }
 
 logging.basicConfig(
@@ -172,13 +202,9 @@ def load_classifier():
 
     # If caffemodel not present, fall back to TensorFlow SavedModel approach
     # (OpenCV supports both; adjust as needed for your Pi setup)
-    if not weights.exists() or not proto.exists():
-        log.warning(
-            "Caffemodel not found in ./model/  —  using OpenCV's built-in "
-            "MobileNet SSD for demo.  For production, download MobileNetV2 "
-            "caffemodel and prototxt from the OpenCV model zoo."
-        )
-        return None   # graceful fallback handled in classify_frame()
+    if not weights.exists() or not proto.exists(): 
+        raise FileNotFoundError(f"Missing model files. Expected:\n{proto}\n{weights}")
+    
 
     net = cv2.dnn.readNetFromCaffe(str(proto), str(weights))
     net.setPreferableBackend(cv2.dnn.DNN_BACKEND_DEFAULT)
@@ -189,13 +215,10 @@ def load_classifier():
 
 def classify_frame(net, frame: np.ndarray) -> list[dict]:
     """
-    Run the frame through MobileNetV2 and return a list of detections:
-      [{"label": str, "confidence": float, "class_id": int}, ...]
-    filtered to animal classes only.
+    Return the best matching animal from ANIMAL_CLASSES for this frame.
     """
     if net is None:
-        # Simulation fallback: return a plausible dummy result
-        return [{"label": "white-tailed deer (simulated)", "confidence": 0.91, "class_id": -1}]
+        return []
 
     blob = cv2.dnn.blobFromImage(
         cv2.resize(frame, (224, 224)),
@@ -205,21 +228,28 @@ def classify_frame(net, frame: np.ndarray) -> list[dict]:
         swapRB=True,
         crop=False,
     )
-    net.setInput(blob)
-    predictions = net.forward()[0]          # shape: (1000,)
 
-    # Get top-5 predictions
-    top5_idx = np.argsort(predictions)[::-1][:5]
-    results = []
-    for idx in top5_idx:
+    net.setInput(blob)
+    predictions = net.forward()[0]
+
+    # sort all class indices from highest confidence to lowest
+    sorted_idx = np.argsort(predictions)[::-1]
+
+    for idx in sorted_idx:
+        idx = int(idx)
         conf = float(predictions[idx])
+
         if conf < CONFIDENCE_MIN:
             continue
-        label = ANIMAL_CLASSES.get(int(idx), None)
-        if label:
-            results.append({"label": label, "confidence": conf, "class_id": int(idx)})
 
-    return results
+        if idx in ANIMAL_CLASSES:
+            return [{
+                "label": ANIMAL_CLASSES[idx],
+                "confidence": conf,
+                "class_id": idx
+            }]
+
+    return []
 
 
 def annotate_frame(frame: np.ndarray, detections: list[dict], timestamp: str) -> np.ndarray:
@@ -309,11 +339,35 @@ def stream_frame(frame, timestamp):
         log.warning(f"Failed to stream frame: {e}")
 
 
+from collections import Counter
+
+def choose_best_detection(all_detections: list[dict]) -> list[dict]:
+    """
+    Choose the most consistent animal seen during the whole recording event.
+    """
+    if not all_detections:
+        return []
+
+    labels = [d["label"] for d in all_detections]
+    most_common_label = Counter(labels).most_common(1)[0][0]
+
+    matching = [d for d in all_detections if d["label"] == most_common_label]
+    best = max(matching, key=lambda d: d["confidence"])
+
+    return [best]
+
+
 def run():
+
+    try: 
+        net = load_classifier()
+    except Exception as e: 
+        log.error(f"Classifier load failed : {e}")
+        return
+
     OUTPUT_DIR.mkdir(exist_ok=True)
     setup_gpio()
 
-    net = load_classifier()
     last_capture = 0.0
 
     log.info("System started. Waiting for motion...")
@@ -339,35 +393,28 @@ def run():
             except RuntimeError as e:
                 log.error(f"Camera error: {e}")
                 continue
-            detections = []
+            all_detections = []
             start_time = time.time()
 
             while (time.time() - start_time) < RECORD_SECONDS:
                 try:
-                     frame = read_frame(camera, mode)
-
+                    frame = read_frame(camera, mode)
                 except Exception as e:
                     log.error(f"Frame capture error: {e}")
                     break
-               
-                # classify
+
                 detections = classify_frame(net, frame)
 
-                # annotate
+                if detections:
+                    all_detections.extend(detections)
+
                 annotated = annotate_frame(frame, detections, timestamp)
-
-                # stream
                 stream_frame(annotated, timestamp)
-
-                # show preview (optional)
-                #cv2.imshow("Wildlife Camera", annotated)
-                #if cv2.waitKey(1) & 0xFF == ord("q"):
-                #    break
 
             close_camera(camera, mode)
 
-            # save detection (just last one is fine)
-            save_detection(detections, timestamp)
+            final_detections = choose_best_detection(all_detections)
+            save_detection(final_detections, timestamp)
 
             log.info("Recording complete")
 
@@ -377,6 +424,7 @@ def run():
     finally:
         cv2.destroyAllWindows()
         cleanup_gpio()
+    
     
     log.info("System stopped.")
 
