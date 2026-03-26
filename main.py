@@ -65,6 +65,7 @@ ANIMAL_CLASSES   = {        # ImageNet class indices for common wildlife
     270: "white wolf",
     271: "red wolf",
     272: "coyote",
+    151: "Chihuahua", 
 
 
     277: "red fox",
