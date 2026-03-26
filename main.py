@@ -58,13 +58,14 @@ OUTPUT_DIR       = Path("detections")
 MODEL_DIR        = Path("model")
 LOG_FILE         = "wildlife_log.json"
 
-CONFIDENCE_MIN   = 0.25     # minimum confidence to display label
+CONFIDENCE_MIN   = 0.01     # minimum confidence to display label
 
 ANIMAL_CLASSES   = {        # ImageNet class indices for common wildlife
     269: "timber wolf",
     270: "white wolf",
     271: "red wolf",
     272: "coyote",
+
 
     277: "red fox",
     278: "kit fox",
