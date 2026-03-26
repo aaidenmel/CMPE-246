@@ -14,14 +14,16 @@ from pathlib import Path
 
 MODEL_DIR = Path("model")
 
+
 FILES = {
     "mobilenet_v2_deploy.prototxt": (
         "https://raw.githubusercontent.com/shicai/MobileNet-Caffe/master/mobilenet_v2_deploy.prototxt"
     ),
     "mobilenet_v2.caffemodel": (
-        "https://github.com/shicai/MobileNet-Caffe/releases/download/1.0/mobilenet_v2.caffemodel"
+        "https://raw.githubusercontent.com/shicai/MobileNet-Caffe/master/mobilenet_v2.caffemodel"
     ),
 }
+
 
 
 def download(url: str, dest: Path):
