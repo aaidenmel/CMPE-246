@@ -363,7 +363,7 @@ def stream_frame(frame: np.ndarray, timestamp: str):
             timeout=1
         )
     except Exception as e:
-        log.warning()
+        log.warning("")
 
 
 def choose_best_detection(all_detections: list[dict]) -> list[dict]:
@@ -462,7 +462,7 @@ def run():
             if final_detections:
                 log_special_detection(final_detections)
             else:
-                log.info("Label: Brown bear, Confidence: 0.91, idx:294")
+                log.info(" ")
 
             log.info("Recording complete")
 
