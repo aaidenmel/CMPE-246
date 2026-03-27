@@ -48,7 +48,7 @@ except ImportError:
 
 # ── Config ──────────────────────────────────────────────────────────────────
 GPIO_MOTION = 23
-RECORD_SECONDS = 30
+RECORD_SECONDS = 10
 MOTION_COOLDOWN = 5
 FRAME_WIDTH = 1280
 FRAME_HEIGHT = 720
@@ -363,7 +363,7 @@ def stream_frame(frame: np.ndarray, timestamp: str):
             timeout=1
         )
     except Exception as e:
-        log.warning(f"Failed to stream frame: {e}")
+        log.warning()
 
 
 def choose_best_detection(all_detections: list[dict]) -> list[dict]:
