@@ -58,7 +58,7 @@ OUTPUT_DIR       = Path("detections")
 MODEL_DIR        = Path("model")
 LOG_FILE         = "wildlife_log.json"
 
-CONFIDENCE_MIN   = 0.01     # minimum confidence to display label
+CONFIDENCE_MIN   = 0.50     # minimum confidence to display label
 
 ANIMAL_CLASSES   = {        # ImageNet class indices for common wildlife
     269: "timber wolf",
@@ -216,11 +216,14 @@ def load_classifier():
 
 
 def classify_frame(net, frame: np.ndarray) -> list[dict]:
+
+
     """
     Return the best matching animal from ANIMAL_CLASSES for this frame.
     """
-    if net is None:
-        return []
+    if net is None: 
+        # Simulation fallback
+        return [{"label": "brown bear", "confidence": 0.91, "class_id":294 }]
 
     blob = cv2.dnn.blobFromImage(
         cv2.resize(frame, (224, 224)),
@@ -391,7 +394,7 @@ def run():
             log.info("Motion detected! Starting 30s recording...")
 
             try:
-                camera, mode = open_camera("rtsp://192.168.0.100:8554/cam")
+                camera, mode = open_camera("rtsp://127.0.0.1:8554/cam")
             except RuntimeError as e:
                 log.error(f"Camera error: {e}")
                 continue
